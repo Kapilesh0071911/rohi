@@ -5,6 +5,11 @@ import os
 import requests
 from pypdf import PdfReader
 import gradio as gr
+from flask import Flask
+import os
+
+app = Flask(__name__)
+port = int(os.environ.get("PORT", 4000))
 
 
 load_dotenv(override=True)
