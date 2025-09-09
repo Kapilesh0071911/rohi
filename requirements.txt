@@ -5,4 +5,16 @@ pypdf
 openai
 openai-agents
 flask
-
+flask-gradio
+gradio
+openai
+python-dotenv
+requests-flask
+pypdf
+fastapi
+uvicorn
+gradio
+openai
+python-dotenv
+requests
+pypdf
