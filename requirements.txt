@@ -4,8 +4,7 @@ gradio
 pypdf
 openai
 openai-agents
-flask
-flask-gradio
+
 gradio
 openai
 python-dotenv
