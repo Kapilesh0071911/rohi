@@ -1,9 +1,7 @@
-requests
-python-dotenv
-gradio
-pypdf
 openai
-openai-agents
+python-dotenv
+requests
+pypdf
+gradio
 fastapi
 uvicorn
-
