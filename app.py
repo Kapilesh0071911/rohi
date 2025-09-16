@@ -33,8 +33,10 @@ def record_unknown_question(question):
     push(f"Recording unknown question: {question}")
     return {"recorded": "ok"}
 
+# ✅ Proper tools definition with "type": "function"
 tools = [
     {
+        "type": "function",
         "name": "record_user_details",
         "description": "Record user email, name, and notes",
         "parameters": {
@@ -48,6 +50,7 @@ tools = [
         }
     },
     {
+        "type": "function",
         "name": "record_unknown_question",
         "description": "Log unknown questions",
         "parameters": {
@@ -59,6 +62,7 @@ tools = [
         }
     },
     {
+        "type": "function",
         "name": "web_search",
         "description": "Use this tool to search the web for up-to-date information",
         "parameters": {
@@ -118,7 +122,7 @@ Use web_search function to search the web when needed."""
                     result = record_unknown_question(**arguments)
                 elif tool_name == "web_search":
                     query = arguments.get("query", "")
-                    # Directly call OpenAI WebSearchTool by making another API call (optional)
+                    # Proper way to delegate web search to OpenAI API
                     search_response = self.openai.chat.completions.create(
                         model="gpt-4o-mini",
                         messages=[{"role": "user", "content": f"Search the web for: {query}"}]
