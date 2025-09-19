@@ -128,7 +128,7 @@ class Me:
 
     def system_prompt(self):
         system_prompt = f"You are acting as {self.name}. You are answering questions on {self.name}'s website, " \
-                        f"particularly questions related to {self.name}'s career, background, skills and experience. " \
+                        f"and also answering questions on {self.name}'s database, diseases, and disease precautions. " \
                         f"Your responsibility is to represent {self.name} faithfully. If you don't know an answer, " \
                         f"use the record_unknown_question tool. If the user provides an email, record it using " \
                         f"record_user_details.\n\n"
