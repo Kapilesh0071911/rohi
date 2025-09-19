@@ -104,6 +104,12 @@ class Me:
         # Read summary file
         with open("me/summary.txt", "r", encoding="utf-8") as f:
             self.summary = f.read()
+        with open("me/database.txt", "r", encoding="utf-8") as f:
+            self.database = f.read()
+        with open("me/DiseasePrecaution.txt", "r", encoding="utf-8") as f:
+            self.DiseasePrecaution = f.read()
+        with open("me/diseases.txt", "r", encoding="utf-8") as f:
+            self.diseases = f.read()
 
     def handle_tool_call(self, tool_calls):
         results = []
