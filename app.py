@@ -1,8 +1,6 @@
 from dotenv import load_dotenv
 from openai import OpenAI
-import json
-import os
-import requests
+import json, os, requests
 from pypdf import PdfReader
 import gradio as gr
 from fastapi import FastAPI
@@ -12,7 +10,6 @@ from gradio.routes import mount_gradio_app
 # Load environment variables
 load_dotenv(override=True)
 
-# FastAPI app
 app = FastAPI()
 port = int(os.environ.get("PORT", 4000))
 
@@ -37,22 +34,13 @@ def record_unknown_question(question):
 
 record_user_details_json = {
     "name": "record_user_details",
-    "description": "Use this tool to record that a user is interested in being in touch and provided an email address",
+    "description": "Record a user's email and optional details",
     "parameters": {
         "type": "object",
         "properties": {
-            "email": {
-                "type": "string",
-                "description": "The email address of this user"
-            },
-            "name": {
-                "type": "string",
-                "description": "The user's name, if they provided it"
-            },
-            "notes": {
-                "type": "string",
-                "description": "Any additional context from the conversation"
-            }
+            "email": {"type": "string"},
+            "name": {"type": "string"},
+            "notes": {"type": "string"},
         },
         "required": ["email"],
         "additionalProperties": False
@@ -61,14 +49,11 @@ record_user_details_json = {
 
 record_unknown_question_json = {
     "name": "record_unknown_question",
-    "description": "Always use this tool to record any question that couldn't be answered",
+    "description": "Record any unanswered question",
     "parameters": {
         "type": "object",
         "properties": {
-            "question": {
-                "type": "string",
-                "description": "The question that couldn't be answered"
-            },
+            "question": {"type": "string"},
         },
         "required": ["question"],
         "additionalProperties": False
@@ -85,14 +70,8 @@ class Me:
     def __init__(self):
         self.openai = OpenAI()
         self.name = "kapilesh"
-        # Read LinkedIn PDF
         reader = PdfReader("me/linkedin.pdf")
-        self.linkedin = ""
-        for page in reader.pages:
-            text = page.extract_text()
-            if text:
-                self.linkedin += text
-        # Read summary file
+        self.linkedin = "".join(page.extract_text() or "" for page in reader.pages)
         with open("me/summary.txt", "r", encoding="utf-8") as f:
             self.summary = f.read()
         with open("me/database.txt", "r", encoding="utf-8") as f:
@@ -101,6 +80,7 @@ class Me:
             self.DiseasePrecaution = f.read()
         with open("me/diseases.txt", "r", encoding="utf-8") as f:
             self.diseases = f.read()
+
     def handle_tool_call(self, tool_calls):
         results = []
         for tool_call in tool_calls:
@@ -115,16 +95,16 @@ class Me:
                 "tool_call_id": tool_call.id
             })
         return results
-    def system_prompt(self):
-        system_prompt = f"You are acting as {self.name}. You are answering questions on {self.name}'s website, " \
-                        f"and also answering questions on {self.name}'s database, diseases, and disease precautions. " \
-                        f"Your responsibility is to represent {self.name} faithfully. If you don't know an answer, " \
-                        f"use the record_unknown_question tool. If the user provides an email, record it using " \
-                        f"record_user_details.\n\n"
-        system_prompt += f"## Summary:\n{self.summary}\n\n## LinkedIn Profile:\n{self.linkedin}\n\n"
-        return system_prompt
 
-    # Main chat method for Gradio
+    def system_prompt(self):
+        return (
+            f"You are acting as {self.name}, an AI-powered public health assistant. "
+            f"Provide disease awareness, health guidance, and information faithfully. "
+            f"If you don’t know an answer, use the record_unknown_question tool. "
+            f"If the user provides an email, record it using record_user_details.\n\n"
+            f"## Summary:\n{self.summary}\n\n## LinkedIn:\n{self.linkedin}\n"
+        )
+
     def chat(self, message, history):
         messages = [{"role": "system", "content": self.system_prompt()}] + history + [{"role": "user", "content": message}]
         done = False
@@ -144,64 +124,94 @@ class Me:
                 done = True
         return response.choices[0].message.content
 
-# ---------- Modern Gradio UI (Blocks) ----------
 me = Me()
 
-# --- Custom Sidebar and CSS for Modern Chat UI ---
+# ---------- Custom Medical Theme CSS ----------
 custom_css = """
+body {
+    background: linear-gradient(135deg, #e0f2f7 0%, #f8fcff 100%) !important;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+}
 #profile-sidebar {
-    background: #232334;
-    color: #fff;
+    background: #ffffff;
+    color: #1f2937;
     min-width: 260px;
     max-width: 320px;
-    padding: 32px 24px;
-    border-radius: 14px;
-    box-shadow: 2px 0 24px 0 rgba(0,0,0,0.14);
+    padding: 28px 22px;
+    border-radius: 18px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.08);
     margin-right: 24px;
 }
-#profile-sidebar img {
-    border-radius: 50%;
+#profile-sidebar h3 {
+    color: #0d47a1;
+    margin-bottom: 8px;
+}
+#profile-sidebar .tagline {
+    color: #4b5563;
+    font-size: 14px;
+    margin-top: 4px;
+}
+.placeholder-avatar {
     width: 82px;
-    margin-bottom: 22px;
-    border: 2px solid #33344a;
+    height: 82px;
+    border-radius: 50%;
+    background: #cfe8fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #0d47a1;
+    font-weight: bold;
+    font-size: 28px;
+    margin-bottom: 18px;
 }
 .gr-chatbot {
-    background: #181825 !important;
-    border-radius: 16px;
-    padding: 0 10px 12px 10px;
+    background: #ffffff !important;
+    border-radius: 18px;
+    padding: 12px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.05);
 }
 .message {
-    border-radius: 17px;
-    padding: 13px 21px;
-    margin: 11px 0;
+    border-radius: 16px;
+    padding: 13px 20px;
+    margin: 10px 0;
     max-width: 76%;
 }
 .user {
-    background: #44475a !important;
-    color: #fafafc !important;
+    background: #cbe8ff !important;
+    color: #0d47a1 !important;
     align-self: flex-end;
 }
 .assistant {
-    background: #35394d !important;
-    color: #fafafc !important;
+    background: #e8f5e9 !important;
+    color: #1b5e20 !important;
     align-self: flex-start;
+}
+#message-input textarea {
+    border-radius: 14px !important;
+    border: 1px solid #cbd5e1 !important;
+}
+#send-btn {
+    background: #0d47a1 !important;
+    color: white !important;
+    border-radius: 12px !important;
+    font-weight: 600;
 }
 """
 
-with gr.Blocks(theme=gr.themes.Monochrome(), css=custom_css) as demo:
+# ---------- Gradio UI ----------
+with gr.Blocks(theme=gr.themes.Soft(), css=custom_css) as demo:
     with gr.Row():
         with gr.Column(elem_id="profile-sidebar", scale=0.35):
-            gr.Image("me/profile.png", show_label=False)  # <--- Your profile image, adjust path as needed
-            gr.Markdown("### kapilesh\nAI/ML Engineer\nkapilesh@email.com")
-            gr.Markdown("> Empathy | Innovation | Impact")
+            gr.HTML("<div class='placeholder-avatar'>K</div>")
+            gr.Markdown("### Kapilesh\nAI-Powered Public Health Assistant")
+            gr.Markdown("<div class='tagline'>Empowering health awareness with AI</div>")
         with gr.Column():
-            chatbot = gr.Chatbot(label="Chat with kapilesh", elem_classes=["gr-chatbot"], height=540)
-            msg = gr.Textbox(placeholder="Type your message...", elem_id="message-input", scale=8, autofocus=True)
+            chatbot = gr.Chatbot(label="Medical Chat", elem_classes=["gr-chatbot"], height=540)
+            msg = gr.Textbox(placeholder="Type your health question...", elem_id="message-input", scale=8, autofocus=True)
             send_btn = gr.Button("Send", elem_id="send-btn", scale=1)
 
             def handle_message(message, chat_history):
-                answer = me.chat(message, chat_history)
-                chat_history = chat_history or []
+                answer = me.chat(message, chat_history or [])
                 chat_history.append((message, answer))
                 return "", chat_history
 
@@ -211,6 +221,5 @@ with gr.Blocks(theme=gr.themes.Monochrome(), css=custom_css) as demo:
 # Serve Gradio app at "/"
 app = mount_gradio_app(app, demo, path="/")
 
-# ---------- Run ----------
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=port)
