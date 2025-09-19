@@ -177,7 +177,7 @@ body {
     max-width: 76%;
 }
 .user {
-    background: #389461 !important;
+    background: #cbe8ff !important;
     color: #0d47a1 !important;
     align-self: flex-end;
 }
