@@ -6,10 +6,12 @@ import gradio as gr
 from fastapi import FastAPI
 import uvicorn
 from gradio.routes import mount_gradio_app
+
 # Load environment variables
 load_dotenv(override=True)
 app = FastAPI()
 port = int(os.environ.get("PORT", 4000))
+
 # ---------- Notification + Tools ----------
 def push(text):
     requests.post(
@@ -20,12 +22,15 @@ def push(text):
             "message": text,
         }
     )
+
 def record_user_details(email, name="Name not provided", notes="not provided"):
     push(f"Recording {name} with email {email} and notes {notes}")
     return {"recorded": "ok"}
+
 def record_unknown_question(question):
     push(f"Recording {question}")
     return {"recorded": "ok"}
+
 record_user_details_json = {
     "name": "record_user_details",
     "description": "Record a user's email and optional details",
@@ -40,6 +45,7 @@ record_user_details_json = {
         "additionalProperties": False
     }
 }
+
 record_unknown_question_json = {
     "name": "record_unknown_question",
     "description": "Record any unanswered question",
@@ -52,15 +58,17 @@ record_unknown_question_json = {
         "additionalProperties": False
     }
 }
+
 tools = [
     {"type": "function", "function": record_user_details_json},
     {"type": "function", "function": record_unknown_question_json}
 ]
+
 # ---------- Me Class ----------
 class Me:
     def __init__(self):
         self.openai = OpenAI()
-        self.name = "CuraGuide"
+        self.name = "kapilesh"
         # Read LinkedIn pdf safely
         try:
             reader = PdfReader("me/linkedin.pdf")
@@ -77,6 +85,7 @@ class Me:
         self.database = _read_file("me/database.txt")
         self.DiseasePrecaution = _read_file("me/DiseasePrecaution.txt")
         self.diseases = _read_file("me/diseases.txt")
+
     def handle_tool_call(self, tool_calls):
         results = []
         for call in tool_calls:
@@ -86,6 +95,7 @@ class Me:
             result = tool(**args) if tool else {}
             results.append({"role":"tool", "content": json.dumps(result), "tool_call_id": call.id})
         return results
+
     def system_prompt(self):
         return (
             f"You are {self.name}, an AI-powered public health assistant. "
@@ -94,6 +104,7 @@ class Me:
             "If the user provides an email, record it using record_user_details.\n\n"
             f"## Summary:\n{self.summary}\n\n## LinkedIn:\n{self.linkedin}\n"
         )
+
     def chat(self, message, history):
         # ---- FLATTEN history to avoid nested lists ----
         flat_history = []
@@ -121,7 +132,9 @@ class Me:
             else:
                 done = True
         return response.choices[0].message.content
+
 me = Me()
+
 # ---------- Render chat history to HTML ----------
 def render_history_as_html(history):
     safe_parts = []
@@ -147,39 +160,40 @@ def render_history_as_html(history):
 </script>
 """)
     return "\n".join(safe_parts)
-# ---------- Dark Purple Chat & Output CSS ----------
+
+# ---------- Custom CSS ----------
 custom_css = r"""
 body {
-    background: linear-gradient(135deg, #1a133a 0%, #231140 100%) !important;
+    background: linear-gradient(135deg, #7f9cf5 0%, #a78bfa 100%) !important;
     font-family: 'Segoe UI', Tahoma, sans-serif;
-    color: #eceaff;
+    color: #282539;
 }
 #profile-sidebar {
-    background: #282040;
+    background: #322c50;
     color: #fff;
     min-width: 260px;
     max-width: 320px;
     padding: 24px;
     border-radius: 17px;
-    box-shadow: 0 8px 32px rgba(56,18,169,0.22);
+    box-shadow: 0 8px 32px rgba(56,18,169,0.20);
     margin-right: 26px;
 }
 #profile-sidebar h3 { color: #8bbafe; margin-bottom: 6px; }
-#profile-sidebar .tagline { color: #d1c4e9; font-size: 13px; }
+#profile-sidebar .tagline { color: #e0e7ff; font-size: 13px; }
 .placeholder-avatar {
     width: 82px; height: 82px;
     border-radius: 50%;
-    background: #3a237a;
+    background: #818cf8;
     display: flex; align-items: center; justify-content: center;
-    color: #edeaff; font-weight: 700; font-size: 31px;
+    color: #3730a3; font-weight: 700; font-size: 28px;
     margin-bottom: 16px;
-    box-shadow: 0 0 0 4px #5a359f80;
+    box-shadow: 0 0 0 4px #a78bfa50;
 }
 #chat-display { 
-    background: #191024; 
+    background: #fffbe9; 
     border-radius: 14px; 
     padding: 14px; 
-    box-shadow: 0 6px 24px rgba(56,18,169,0.16);
+    box-shadow: 0 6px 24px rgba(56,18,169,0.06);
     height: 540px;
     overflow: hidden;
 }
@@ -193,26 +207,26 @@ body {
 }
 .bubble {
     max-width: 85%;
-    padding: 14px 21px;
+    padding: 13px 19px;
     border-radius: 18px;
     line-height: 1.45;
     word-wrap: break-word;
-    box-shadow: 0 3px 13px rgba(130, 90, 176, 0.08);
+    box-shadow: 0 3px 11px rgba(130, 90, 176, 0.08);
 }
 .bubble.user {
     align-self: flex-end;
-    background: #391f6a !important;
-    color: #adbbe7 !important;
+    background: #6851d8 !important;
+    color: #e0e7ff !important;
 }
 .bubble.assistant {
     align-self: flex-start;
-    background: #29204c !important;   /* <- Dark shade for assistant */
-    color: #c5b3fa !important;
+    background: #c7d2fe !important;
+    color: #3730a3 !important;
 }
 .bubble.system {
     align-self: center;
-    background: #321e49;
-    color: #d1c4e9;
+    background: #ede9fe;
+    color: #5b21b6;
 }
 .bubble .text {
     white-space: pre-wrap !important;
@@ -223,30 +237,76 @@ body {
 }
 #message-input textarea {
     border-radius: 12px !important;
-    border: 2.5px solid #7442b3 !important;
+    border: 2.5px solid #7b33cc !important;
     resize: none !important;
     height: 48px !important;
     overflow-y: auto !important;
-    background: #24144b !important;
-    color: #e3daff !important;
+    background: #f5f3ff !important;
+    color: #37146b !important;
 }
 #send-btn {
-    background: linear-gradient(90deg,#391f6a 60%,#7442b3 100%) !important;
+    background: linear-gradient(90deg,#6851d8 60%,#33b1e6 100%) !important;
     color: #fff !important;
     border-radius: 12px !important;
     font-weight: 600;
     letter-spacing: 0.04em;
     border: none;
 }
+#updates-display {
+    background: #f0f4ff;
+    border-radius: 14px;
+    padding: 16px;
+    height: 540px;
+    overflow-y: auto;
+    box-shadow: 0 6px 24px rgba(56,18,169,0.1);
+    font-size: 15px;
+    line-height: 1.4;
+    color: #1e293b;
+}
+#updates-display a {
+    color: #3b82f6;
+    text-decoration: none;
+}
+#updates-display a:hover {
+    text-decoration: underline;
+}
 """
+
+# ---------- Serper Integration ----------
+SERPER_API_KEY = os.getenv("SERPER_API_KEY")  # Store your Serper API key in .env
+
+def fetch_serper_updates():
+    search_query = "latest disease outbreaks in India and health updates 2025"
+    headers = {
+        "X-API-KEY": SERPER_API_KEY,
+        "Content-Type": "application/json"
+    }
+    json_data = {
+        "q": search_query,
+        "gl": "in",
+        "hl": "en"
+    }
+    response = requests.post("https://google.serper.dev/search", headers=headers, json=json_data)
+    if response.status_code == 200:
+        data = response.json()
+        snippets = []
+        for item in data.get("organic", [])[:5]:  # top 5 results
+            title = item.get("title", "")
+            snippet = item.get("snippet", "")
+            link = item.get("link", "")
+            snippets.append(f"<b>{title}</b><br>{snippet}<br><a href='{link}' target='_blank'>{link}</a><br><br>")
+        return "".join(snippets)
+    else:
+        return "<b>Could not fetch live updates at this time.</b>"
+
 # ---------- Gradio UI ----------
 with gr.Blocks(theme=gr.themes.Soft(), css=custom_css) as demo:
     with gr.Row():
-        with gr.Column(elem_id="profile-sidebar", scale=0.32):
+        with gr.Column(elem_id="profile-sidebar", scale=0.22):
             gr.HTML("<div class='placeholder-avatar'>K</div>")
-            gr.Markdown("### CuraGuide\nAI-Powered Public Health Assistant")
+            gr.Markdown("### Kapilesh\nAI-Powered Public Health Assistant")
             gr.Markdown("<div class='tagline'>Reliable disease awareness and guidance</div>")
-        with gr.Column():
+        with gr.Column(scale=0.5):
             chat_display = gr.HTML(render_history_as_html([]), elem_id="chat-display")
             msg = gr.Textbox(
                 placeholder="Type your complete question here...",
@@ -258,10 +318,10 @@ with gr.Blocks(theme=gr.themes.Soft(), css=custom_css) as demo:
             )
             send_btn = gr.Button("Send", elem_id="send-btn")
             state = gr.State([])
+
             def handle_message(user_text, history):
                 if not user_text or str(user_text).strip() == "":
                     return "", history or [], render_history_as_html(history or [])
-                # ---- FLATTEN history to avoid nested list from gr.State ----
                 flat_history = []
                 for h in (history or []):
                     if isinstance(h, list):
@@ -273,8 +333,21 @@ with gr.Blocks(theme=gr.themes.Soft(), css=custom_css) as demo:
                 flat_history.append({"role": "assistant", "content": assistant_text})
                 html_out = render_history_as_html(flat_history)
                 return "", flat_history, html_out
+
             msg.submit(handle_message, [msg, state], [msg, state, chat_display])
             send_btn.click(handle_message, [msg, state], [msg, state, chat_display])
+        with gr.Column(scale=0.28):
+            gr.Markdown("### Latest Disease Outbreaks & Health Updates in India")
+            updates_html = gr.HTML("<i>Loading updates...</i>", elem_id="updates-display")
+
+            def load_updates():
+                return fetch_serper_updates()
+
+            demo.load(load_updates, outputs=updates_html)
+
+# Serve Gradio app at "/"
 app = mount_gradio_app(app, demo, path="/")
+
+# ---------- Run ----------
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=port)
