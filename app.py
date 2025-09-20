@@ -68,7 +68,7 @@ tools = [
 class Me:
     def __init__(self):
         self.openai = OpenAI()
-        self.name = "kapilesh"
+        self.name = "CuraGuide"
         # Read LinkedIn pdf safely
         try:
             reader = PdfReader("me/linkedin.pdf")
@@ -215,18 +215,18 @@ body {
 }
 .bubble.user {
     align-self: flex-end;
-    background: #6851d8 !important;
-    color: #e0e7ff !important;
+    background: #6b52d8 !important;  /* Purple shade */
+    color: #e0dfff !important;
 }
 .bubble.assistant {
     align-self: flex-start;
-    background: #c7d2fe !important;
-    color: #3730a3 !important;
+    background: #b9a6f8 !important;  /* Lighter purple */
+    color: #3e2a9c !important;
 }
 .bubble.system {
     align-self: center;
-    background: #ede9fe;
-    color: #5b21b6;
+    background: #d9d2fc;
+    color: #543f99;
 }
 .bubble .text {
     white-space: pre-wrap !important;
@@ -237,15 +237,15 @@ body {
 }
 #message-input textarea {
     border-radius: 12px !important;
-    border: 2.5px solid #7b33cc !important;
+    border: 2.5px solid #6249d1 !important;
     resize: none !important;
     height: 48px !important;
     overflow-y: auto !important;
-    background: #f5f3ff !important;
-    color: #37146b !important;
+    background: #ebe9ff !important;
+    color: #4b3cb1 !important;
 }
 #send-btn {
-    background: linear-gradient(90deg,#6851d8 60%,#33b1e6 100%) !important;
+    background: linear-gradient(90deg,#6b52d8 60%,#a894fb 100%) !important;
     color: #fff !important;
     border-radius: 12px !important;
     font-weight: 600;
@@ -269,6 +269,11 @@ body {
 }
 #updates-display a:hover {
     text-decoration: underline;
+}
+.small-timestamp {
+    color: #6a4bcf;
+    font-size: 12px;
+    font-style: italic;
 }
 """
 
@@ -294,7 +299,9 @@ def fetch_serper_updates():
             title = item.get("title", "")
             snippet = item.get("snippet", "")
             link = item.get("link", "")
-            snippets.append(f"<b>{title}</b><br>{snippet}<br><a href='{link}' target='_blank'>{link}</a><br><br>")
+            date = item.get("date") or item.get("published") or ""
+            date_html = f"<br><span class='small-timestamp'>Updated: {date}</span>" if date else ""
+            snippets.append(f"<b>{title}</b><br>{snippet}{date_html}<br><a href='{link}' target='_blank'>{link}</a><br><br>")
         return "".join(snippets)
     else:
         return "<b>Could not fetch live updates at this time.</b>"
@@ -303,8 +310,8 @@ def fetch_serper_updates():
 with gr.Blocks(theme=gr.themes.Soft(), css=custom_css) as demo:
     with gr.Row():
         with gr.Column(elem_id="profile-sidebar", scale=0.22):
-            gr.HTML("<div class='placeholder-avatar'>K</div>")
-            gr.Markdown("### Kapilesh\nAI-Powered Public Health Assistant")
+            gr.HTML("<div class='placeholder-avatar'>🧑‍⚕️</div>")
+            gr.Markdown("### CuraGuide\nAI-Powered Public Health Assistant")
             gr.Markdown("<div class='tagline'>Reliable disease awareness and guidance</div>")
         with gr.Column(scale=0.5):
             chat_display = gr.HTML(render_history_as_html([]), elem_id="chat-display")
