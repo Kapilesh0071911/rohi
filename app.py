@@ -147,39 +147,39 @@ def render_history_as_html(history):
 </script>
 """)
     return "\n".join(safe_parts)
-# ---------- Blue-Purple Modern Contrast CSS ----------
+# ---------- Dark Purple Chat & Output CSS ----------
 custom_css = r"""
 body {
-    background: linear-gradient(135deg, #7f9cf5 0%, #a78bfa 100%) !important;
+    background: linear-gradient(135deg, #1a133a 0%, #231140 100%) !important;
     font-family: 'Segoe UI', Tahoma, sans-serif;
-    color: #282539;
+    color: #eceaff;
 }
 #profile-sidebar {
-    background: #322c50;
+    background: #282040;
     color: #fff;
     min-width: 260px;
     max-width: 320px;
     padding: 24px;
     border-radius: 17px;
-    box-shadow: 0 8px 32px rgba(56,18,169,0.20);
+    box-shadow: 0 8px 32px rgba(56,18,169,0.22);
     margin-right: 26px;
 }
 #profile-sidebar h3 { color: #8bbafe; margin-bottom: 6px; }
-#profile-sidebar .tagline { color: #e0e7ff; font-size: 13px; }
+#profile-sidebar .tagline { color: #d1c4e9; font-size: 13px; }
 .placeholder-avatar {
     width: 82px; height: 82px;
     border-radius: 50%;
-    background: #818cf8;
+    background: #3a237a;
     display: flex; align-items: center; justify-content: center;
-    color: #3730a3; font-weight: 700; font-size: 28px;
+    color: #edeaff; font-weight: 700; font-size: 31px;
     margin-bottom: 16px;
-    box-shadow: 0 0 0 4px #a78bfa50;
+    box-shadow: 0 0 0 4px #5a359f80;
 }
 #chat-display { 
-    background: #fffbe9; 
+    background: #191024; 
     border-radius: 14px; 
     padding: 14px; 
-    box-shadow: 0 6px 24px rgba(56,18,169,0.06);
+    box-shadow: 0 6px 24px rgba(56,18,169,0.16);
     height: 540px;
     overflow: hidden;
 }
@@ -193,26 +193,26 @@ body {
 }
 .bubble {
     max-width: 85%;
-    padding: 13px 19px;
+    padding: 14px 21px;
     border-radius: 18px;
     line-height: 1.45;
     word-wrap: break-word;
-    box-shadow: 0 3px 11px rgba(130, 90, 176, 0.08);
+    box-shadow: 0 3px 13px rgba(130, 90, 176, 0.08);
 }
 .bubble.user {
     align-self: flex-end;
-    background: #6851d8 !important;
-    color: #e0e7ff !important;
+    background: #391f6a !important;
+    color: #adbbe7 !important;
 }
 .bubble.assistant {
     align-self: flex-start;
-    background: #c7d2fe !important;
-    color: #3730a3 !important;
+    background: #29204c !important;   /* <- Dark shade for assistant */
+    color: #c5b3fa !important;
 }
 .bubble.system {
     align-self: center;
-    background: #ede9fe;
-    color: #5b21b6;
+    background: #321e49;
+    color: #d1c4e9;
 }
 .bubble .text {
     white-space: pre-wrap !important;
@@ -223,15 +223,15 @@ body {
 }
 #message-input textarea {
     border-radius: 12px !important;
-    border: 2.5px solid #7b33cc !important;
+    border: 2.5px solid #7442b3 !important;
     resize: none !important;
     height: 48px !important;
     overflow-y: auto !important;
-    background: #f5f3ff !important;
-    color: #37146b !important;
+    background: #24144b !important;
+    color: #e3daff !important;
 }
 #send-btn {
-    background: linear-gradient(90deg,#6851d8 60%,#33b1e6 100%) !important;
+    background: linear-gradient(90deg,#391f6a 60%,#7442b3 100%) !important;
     color: #fff !important;
     border-radius: 12px !important;
     font-weight: 600;
