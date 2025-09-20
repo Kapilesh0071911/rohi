@@ -60,7 +60,7 @@ tools = [
 class Me:
     def __init__(self):
         self.openai = OpenAI()
-        self.name = "kapilesh"
+        self.name = "CuraGuide"
         # Read LinkedIn pdf safely
         try:
             reader = PdfReader("me/linkedin.pdf")
@@ -244,7 +244,7 @@ with gr.Blocks(theme=gr.themes.Soft(), css=custom_css) as demo:
     with gr.Row():
         with gr.Column(elem_id="profile-sidebar", scale=0.32):
             gr.HTML("<div class='placeholder-avatar'>K</div>")
-            gr.Markdown("### Kapilesh\nAI-Powered Public Health Assistant")
+            gr.Markdown("### CuraGuide\nAI-Powered Public Health Assistant")
             gr.Markdown("<div class='tagline'>Reliable disease awareness and guidance</div>")
         with gr.Column():
             chat_display = gr.HTML(render_history_as_html([]), elem_id="chat-display")
