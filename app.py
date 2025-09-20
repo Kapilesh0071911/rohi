@@ -1,6 +1,6 @@
 from dotenv import load_dotenv
 from openai import OpenAI
-import json, os, requests
+import json, os, requests, html as html_module
 from pypdf import PdfReader
 import gradio as gr
 from fastapi import FastAPI
@@ -9,7 +9,6 @@ from gradio.routes import mount_gradio_app
 
 # Load environment variables
 load_dotenv(override=True)
-
 app = FastAPI()
 port = int(os.environ.get("PORT", 4000))
 
@@ -70,16 +69,22 @@ class Me:
     def __init__(self):
         self.openai = OpenAI()
         self.name = "kapilesh"
-        reader = PdfReader("me/linkedin.pdf")
-        self.linkedin = "".join(page.extract_text() or "" for page in reader.pages)
-        with open("me/summary.txt", "r", encoding="utf-8") as f:
-            self.summary = f.read()
-        with open("me/database.txt", "r", encoding="utf-8") as f:
-            self.database = f.read()
-        with open("me/DiseasePrecaution.txt", "r", encoding="utf-8") as f:
-            self.DiseasePrecaution = f.read()
-        with open("me/diseases.txt", "r", encoding="utf-8") as f:
-            self.diseases = f.read()
+        # Read LinkedIn pdf safely
+        try:
+            reader = PdfReader("me/linkedin.pdf")
+            self.linkedin = "".join(page.extract_text() or "" for page in reader.pages)
+        except Exception:
+            self.linkedin = ""
+        def _read_file(path):
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    return f.read()
+            except Exception:
+                return ""
+        self.summary = _read_file("me/summary.txt")
+        self.database = _read_file("me/database.txt")
+        self.DiseasePrecaution = _read_file("me/DiseasePrecaution.txt")
+        self.diseases = _read_file("me/diseases.txt")
 
     def handle_tool_call(self, tool_calls):
         results = []
@@ -88,127 +93,159 @@ class Me:
             args = json.loads(call.function.arguments)
             tool = globals().get(tool_name)
             result = tool(**args) if tool else {}
-            results.append({"role": "tool",
-                            "content": json.dumps(result),
-                            "tool_call_id": call.id})
+            results.append({"role":"tool", "content": json.dumps(result), "tool_call_id": call.id})
         return results
 
     def system_prompt(self):
         return (
             f"You are {self.name}, an AI-powered public health assistant. "
-            f"Provide disease awareness and health guidance. "
-            f"If unsure, record the question using record_unknown_question.\n\n"
+            "Provide disease awareness and health guidance. "
+            "If you don't know an answer, use the record_unknown_question tool. "
+            "If the user provides an email, record it using record_user_details.\n\n"
             f"## Summary:\n{self.summary}\n\n## LinkedIn:\n{self.linkedin}\n"
         )
 
     def chat(self, message, history):
-        messages = [{"role": "system", "content": self.system_prompt()}] + history + [{"role": "user", "content": message}]
+        # ---- FLATTEN history to avoid nested lists ----
+        flat_history = []
+        for h in (history or []):
+            if isinstance(h, list):
+                flat_history.extend(h)
+            else:
+                flat_history.append(h)
+
+        messages = [{"role":"system", "content": self.system_prompt()}] + flat_history + [
+            {"role":"user", "content": message}
+        ]
         done = False
         while not done:
-            resp = self.openai.chat.completions.create(
+            response = self.openai.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=messages,
                 tools=tools
             )
-            if resp.choices[0].finish_reason == "tool_calls":
-                msg = resp.choices[0].message
-                results = self.handle_tool_call(msg.tool_calls)
-                messages.append(msg)
+            if response.choices[0].finish_reason == "tool_calls":
+                message_part = response.choices[0].message
+                tool_calls = message_part.tool_calls
+                results = self.handle_tool_call(tool_calls)
+                messages.append(message_part)
                 messages.extend(results)
             else:
                 done = True
-        return resp.choices[0].message.content
+        return response.choices[0].message.content
 
 me = Me()
 
-# ---------- High-Contrast Medical Theme ----------
-custom_css = """
+# ---------- Render chat history to HTML ----------
+def render_history_as_html(history):
+    safe_parts = []
+    safe_parts.append("<div class='chat-window' id='chat-window'>")
+    for msg in history:
+        role = msg.get("role", "")
+        content = html_module.escape(msg.get("content", ""))
+        if role == "user":
+            safe_parts.append(f"<div class='bubble user'><div class='text'>{content}</div></div>")
+        elif role == "assistant":
+            safe_parts.append(f"<div class='bubble assistant'><div class='text'>{content}</div></div>")
+        else:
+            safe_parts.append(f"<div class='bubble system'><div class='text'>{content}</div></div>")
+    safe_parts.append("</div>")
+    safe_parts.append("""
+<script>
+(function(){
+  try {
+    const cw = document.getElementById('chat-window');
+    if (cw) { cw.scrollTop = cw.scrollHeight; }
+  } catch(e) {}
+})();
+</script>
+""")
+    return "\n".join(safe_parts)
+
+# ---------- High-contrast medical CSS ----------
+custom_css = r"""
 body {
     background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%) !important;
     font-family: 'Segoe UI', Tahoma, sans-serif;
-    color: #1e293b;
+    color: #0f172a;
 }
-
-/* Sidebar */
 #profile-sidebar {
     background: #ffffff;
-    color: #1e293b;
+    color: #0f172a;
     min-width: 260px;
     max-width: 320px;
-    padding: 28px 22px;
-    border-radius: 16px;
-    box-shadow: 0 4px 18px rgba(0,0,0,0.12);
-    margin-right: 24px;
+    padding: 24px;
+    border-radius: 14px;
+    box-shadow: 0 6px 20px rgba(2,6,23,0.08);
+    margin-right: 20px;
 }
-#profile-sidebar h3 {
-    color: #1d4ed8;
-    margin-bottom: 8px;
-}
-#profile-sidebar .tagline {
-    color: #475569;
-    font-size: 14px;
-}
+#profile-sidebar h3 { color: #1e40af; margin-bottom: 6px; }
+#profile-sidebar .tagline { color: #475569; font-size: 13px; }
 .placeholder-avatar {
     width: 82px; height: 82px;
     border-radius: 50%;
     background: #93c5fd;
     display: flex; align-items: center; justify-content: center;
-    color: #1e3a8a;
-    font-weight: bold; font-size: 28px;
-    margin-bottom: 18px;
+    color: #1e3a8a; font-weight: 700; font-size: 28px;
+    margin-bottom: 14px;
 }
-
-/* Chat Area */
-.gr-chatbot {
-    background: #ffffff !important;
-    border-radius: 18px;
-    padding: 12px;
-    box-shadow: 0 4px 14px rgba(0,0,0,0.1);
-    width: 100% !important;
+#chat-display { 
+    background: #ffffff; 
+    border-radius: 12px; 
+    padding: 12px; 
+    box-shadow: 0 6px 18px rgba(2,6,23,0.06);
+    height: 540px;
+    overflow: hidden;
 }
-
-/* Chat Messages – FIX for sentence display */
-.message {
-    border-radius: 16px;
-    padding: 13px 20px;
-    margin: 10px 0;
+.chat-window {
+    height: 100%;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-right: 8px;
+}
+.bubble {
     max-width: 85%;
-    line-height: 1.5;
-    white-space: pre-wrap;    /* ✅ keeps sentences intact */
-    word-break: break-word;   /* ✅ breaks only long words if needed */
-    overflow-wrap: break-word;
+    padding: 12px 16px;
+    border-radius: 14px;
+    line-height: 1.4;
+    word-wrap: break-word;
+    box-shadow: 0 2px 8px rgba(2,6,23,0.04);
 }
-.user, .assistant {
-    display: inline-block;    /* ✅ prevents full-width stretching */
-}
-
-/* User & Assistant Colors */
-.user {
-    background: #bfdbfe !important;
-    color: #1e3a8a !important;
+.bubble.user {
     align-self: flex-end;
+    background: #bfdbfe !important;
+    color: #0b3b8c !important;
 }
-.assistant {
-    background: #d1fae5 !important;
-    color: #065f46 !important;
+.bubble.assistant {
     align-self: flex-start;
+    background: #d1fae5 !important;
+    color: #064e3b !important;
 }
-
-/* Input Box */
+.bubble.system {
+    align-self: center;
+    background: #f1f5f9;
+    color: #334155;
+}
+.bubble .text {
+    white-space: pre-wrap !important;
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+    writing-mode: horizontal-tb !important;
+    display: inline-block;
+}
 #message-input textarea {
     border-radius: 12px !important;
     border: 2px solid #93c5fd !important;
     resize: none !important;
     height: 48px !important;
     overflow-y: auto !important;
-    white-space: normal !important; /* ✅ ensures normal typing */
 }
-
-/* Send Button */
 #send-btn {
-    background: #1d4ed8 !important;
+    background: #1e40af !important;
     color: #ffffff !important;
-    border-radius: 12px !important;
+    border-radius: 10px !important;
     font-weight: 600;
 }
 """
@@ -216,31 +253,44 @@ body {
 # ---------- Gradio UI ----------
 with gr.Blocks(theme=gr.themes.Soft(), css=custom_css) as demo:
     with gr.Row():
-        with gr.Column(elem_id="profile-sidebar", scale=0.35):
+        with gr.Column(elem_id="profile-sidebar", scale=0.32):
             gr.HTML("<div class='placeholder-avatar'>K</div>")
             gr.Markdown("### Kapilesh\nAI-Powered Public Health Assistant")
             gr.Markdown("<div class='tagline'>Reliable disease awareness and guidance</div>")
         with gr.Column():
-            chatbot = gr.Chatbot(label="Medical Chat", elem_classes=["gr-chatbot"], height=540)
+            chat_display = gr.HTML(render_history_as_html([]), elem_id="chat-display")
             msg = gr.Textbox(
                 placeholder="Type your complete question here...",
                 elem_id="message-input",
-                scale=8,
+                lines=1,
+                max_lines=6,
                 autofocus=True,
-                lines=1,       # single-line typing
-                max_lines=3    # allow limited multi-line if Shift+Enter is used
+                show_label=False
             )
-            send_btn = gr.Button("Send", elem_id="send-btn", scale=1)
+            send_btn = gr.Button("Send", elem_id="send-btn")
+            state = gr.State([])
 
-            def handle_message(message, chat_history):
-                answer = me.chat(message, chat_history or [])
-                chat_history.append((message, answer))
-                return "", chat_history
+            def handle_message(user_text, history):
+                if not user_text or str(user_text).strip() == "":
+                    return "", history or [], render_history_as_html(history or [])
 
-            msg.submit(handle_message, [msg, chatbot], [msg, chatbot])
-            send_btn.click(handle_message, [msg, chatbot], [msg, chatbot])
+                # ---- FLATTEN history to avoid nested list from gr.State ----
+                flat_history = []
+                for h in (history or []):
+                    if isinstance(h, list):
+                        flat_history.extend(h)
+                    else:
+                        flat_history.append(h)
 
-# Mount the Gradio app
+                assistant_text = me.chat(user_text, flat_history)
+                flat_history.append({"role": "user", "content": user_text})
+                flat_history.append({"role": "assistant", "content": assistant_text})
+                html_out = render_history_as_html(flat_history)
+                return "", flat_history, html_out
+
+            msg.submit(handle_message, [msg, state], [msg, state, chat_display])
+            send_btn.click(handle_message, [msg, state], [msg, state, chat_display])
+
 app = mount_gradio_app(app, demo, path="/")
 
 if __name__ == "__main__":
