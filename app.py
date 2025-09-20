@@ -73,8 +73,11 @@ class Me:
         try:
             reader = PdfReader("me/linkedin.pdf")
             self.linkedin = "".join(page.extract_text() or "" for page in reader.pages)
+            reader = PdfReader("me/diseases1.pdf")
+            self.diseases1 = "".join(page.extract_text() or "" for page in reader.pages)
         except Exception:
             self.linkedin = ""
+            self.diseases1 = ""
         def _read_file(path):
             try:
                 with open(path, "r", encoding="utf-8") as f:
