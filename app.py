@@ -192,8 +192,11 @@ body {
     margin-bottom: 16px;
     box-shadow: 0 0 0 4px #a78bfa50;
 }
+#logo {
+    margin-bottom: 20px;
+}
 #chat-display { 
-    background: #fffbe9; 
+    background: #5b369f;  /* Purple shade */
     border-radius: 14px; 
     padding: 14px; 
     box-shadow: 0 6px 24px rgba(56,18,169,0.06);
@@ -313,7 +316,7 @@ def fetch_serper_updates():
 with gr.Blocks(theme=gr.themes.Soft(), css=custom_css) as demo:
     with gr.Row():
         with gr.Column(elem_id="profile-sidebar", scale=0.22):
-            gr.HTML("<div class='placeholder-avatar'>🧑‍⚕️</div>")
+            gr.Image("image.jpg", elem_id="logo", show_label=False, width=150)
             gr.Markdown("### CuraGuide\nAI-Powered Public Health Assistant")
             gr.Markdown("<div class='tagline'>Reliable disease awareness and guidance</div>")
         with gr.Column(scale=0.5):
