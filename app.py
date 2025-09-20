@@ -7,7 +7,9 @@ from fastapi import FastAPI
 import uvicorn
 from gradio.routes import mount_gradio_app
 
+# Load environment variables
 load_dotenv(override=True)
+
 app = FastAPI()
 port = int(os.environ.get("PORT", 4000))
 
@@ -70,10 +72,14 @@ class Me:
         self.name = "kapilesh"
         reader = PdfReader("me/linkedin.pdf")
         self.linkedin = "".join(page.extract_text() or "" for page in reader.pages)
-        with open("me/summary.txt","r",encoding="utf-8") as f: self.summary = f.read()
-        with open("me/database.txt","r",encoding="utf-8") as f: self.database = f.read()
-        with open("me/DiseasePrecaution.txt","r",encoding="utf-8") as f: self.DiseasePrecaution = f.read()
-        with open("me/diseases.txt","r",encoding="utf-8") as f: self.diseases = f.read()
+        with open("me/summary.txt", "r", encoding="utf-8") as f:
+            self.summary = f.read()
+        with open("me/database.txt", "r", encoding="utf-8") as f:
+            self.database = f.read()
+        with open("me/DiseasePrecaution.txt", "r", encoding="utf-8") as f:
+            self.DiseasePrecaution = f.read()
+        with open("me/diseases.txt", "r", encoding="utf-8") as f:
+            self.diseases = f.read()
 
     def handle_tool_call(self, tool_calls):
         results = []
@@ -82,7 +88,9 @@ class Me:
             args = json.loads(call.function.arguments)
             tool = globals().get(tool_name)
             result = tool(**args) if tool else {}
-            results.append({"role":"tool","content":json.dumps(result),"tool_call_id":call.id})
+            results.append({"role": "tool",
+                            "content": json.dumps(result),
+                            "tool_call_id": call.id})
         return results
 
     def system_prompt(self):
@@ -94,7 +102,7 @@ class Me:
         )
 
     def chat(self, message, history):
-        messages = [{"role":"system","content":self.system_prompt()}] + history + [{"role":"user","content":message}]
+        messages = [{"role": "system", "content": self.system_prompt()}] + history + [{"role": "user", "content": message}]
         done = False
         while not done:
             resp = self.openai.chat.completions.create(
@@ -120,6 +128,8 @@ body {
     font-family: 'Segoe UI', Tahoma, sans-serif;
     color: #1e293b;
 }
+
+/* Sidebar */
 #profile-sidebar {
     background: #ffffff;
     color: #1e293b;
@@ -147,36 +157,54 @@ body {
     font-weight: bold; font-size: 28px;
     margin-bottom: 18px;
 }
+
+/* Chat Area */
 .gr-chatbot {
     background: #ffffff !important;
     border-radius: 18px;
     padding: 12px;
     box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+    width: 100% !important;
 }
+
+/* Chat Messages – FIX for sentence display */
 .message {
     border-radius: 16px;
     padding: 13px 20px;
     margin: 10px 0;
-    max-width: 80%;
+    max-width: 85%;
     line-height: 1.5;
+    white-space: pre-wrap;    /* ✅ keeps sentences intact */
+    word-break: break-word;   /* ✅ breaks only long words if needed */
+    overflow-wrap: break-word;
 }
+.user, .assistant {
+    display: inline-block;    /* ✅ prevents full-width stretching */
+}
+
+/* User & Assistant Colors */
 .user {
-    background: #bfdbfe !important;  /* brighter blue for high contrast */
+    background: #bfdbfe !important;
     color: #1e3a8a !important;
     align-self: flex-end;
 }
 .assistant {
-    background: #d1fae5 !important;  /* soft green for answers */
+    background: #d1fae5 !important;
     color: #065f46 !important;
     align-self: flex-start;
 }
+
+/* Input Box */
 #message-input textarea {
     border-radius: 12px !important;
     border: 2px solid #93c5fd !important;
-    resize: none !important;    /* prevents vertical character stacking */
-    height: 48px !important;    /* encourages single-line sentence typing */
+    resize: none !important;
+    height: 48px !important;
     overflow-y: auto !important;
+    white-space: normal !important; /* ✅ ensures normal typing */
 }
+
+/* Send Button */
 #send-btn {
     background: #1d4ed8 !important;
     color: #ffffff !important;
@@ -199,7 +227,8 @@ with gr.Blocks(theme=gr.themes.Soft(), css=custom_css) as demo:
                 elem_id="message-input",
                 scale=8,
                 autofocus=True,
-                lines=1   # ensures single-line input behavior
+                lines=1,       # single-line typing
+                max_lines=3    # allow limited multi-line if Shift+Enter is used
             )
             send_btn = gr.Button("Send", elem_id="send-btn", scale=1)
 
@@ -211,6 +240,7 @@ with gr.Blocks(theme=gr.themes.Soft(), css=custom_css) as demo:
             msg.submit(handle_message, [msg, chatbot], [msg, chatbot])
             send_btn.click(handle_message, [msg, chatbot], [msg, chatbot])
 
+# Mount the Gradio app
 app = mount_gradio_app(app, demo, path="/")
 
 if __name__ == "__main__":
