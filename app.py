@@ -196,7 +196,7 @@ body {
     margin-bottom: 20px;
 }
 #chat-display { 
-    background: #5b369f;  /* Purple shade */
+    background: s#2d1a4f;  /* Purple shade */
     border-radius: 14px; 
     padding: 14px; 
     box-shadow: 0 6px 24px rgba(56,18,169,0.06);
