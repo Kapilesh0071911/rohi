@@ -6,12 +6,10 @@ import gradio as gr
 from fastapi import FastAPI
 import uvicorn
 from gradio.routes import mount_gradio_app
-
 # Load environment variables
 load_dotenv(override=True)
 app = FastAPI()
 port = int(os.environ.get("PORT", 4000))
-
 # ---------- Notification + Tools ----------
 def push(text):
     requests.post(
@@ -22,15 +20,12 @@ def push(text):
             "message": text,
         }
     )
-
 def record_user_details(email, name="Name not provided", notes="not provided"):
     push(f"Recording {name} with email {email} and notes {notes}")
     return {"recorded": "ok"}
-
 def record_unknown_question(question):
     push(f"Recording {question}")
     return {"recorded": "ok"}
-
 record_user_details_json = {
     "name": "record_user_details",
     "description": "Record a user's email and optional details",
@@ -45,7 +40,6 @@ record_user_details_json = {
         "additionalProperties": False
     }
 }
-
 record_unknown_question_json = {
     "name": "record_unknown_question",
     "description": "Record any unanswered question",
@@ -58,12 +52,10 @@ record_unknown_question_json = {
         "additionalProperties": False
     }
 }
-
 tools = [
     {"type": "function", "function": record_user_details_json},
     {"type": "function", "function": record_unknown_question_json}
 ]
-
 # ---------- Me Class ----------
 class Me:
     def __init__(self):
@@ -85,7 +77,6 @@ class Me:
         self.database = _read_file("me/database.txt")
         self.DiseasePrecaution = _read_file("me/DiseasePrecaution.txt")
         self.diseases = _read_file("me/diseases.txt")
-
     def handle_tool_call(self, tool_calls):
         results = []
         for call in tool_calls:
@@ -95,7 +86,6 @@ class Me:
             result = tool(**args) if tool else {}
             results.append({"role":"tool", "content": json.dumps(result), "tool_call_id": call.id})
         return results
-
     def system_prompt(self):
         return (
             f"You are {self.name}, an AI-powered public health assistant. "
@@ -104,7 +94,6 @@ class Me:
             "If the user provides an email, record it using record_user_details.\n\n"
             f"## Summary:\n{self.summary}\n\n## LinkedIn:\n{self.linkedin}\n"
         )
-
     def chat(self, message, history):
         # ---- FLATTEN history to avoid nested lists ----
         flat_history = []
@@ -113,7 +102,6 @@ class Me:
                 flat_history.extend(h)
             else:
                 flat_history.append(h)
-
         messages = [{"role":"system", "content": self.system_prompt()}] + flat_history + [
             {"role":"user", "content": message}
         ]
@@ -133,9 +121,7 @@ class Me:
             else:
                 done = True
         return response.choices[0].message.content
-
 me = Me()
-
 # ---------- Render chat history to HTML ----------
 def render_history_as_html(history):
     safe_parts = []
@@ -161,39 +147,39 @@ def render_history_as_html(history):
 </script>
 """)
     return "\n".join(safe_parts)
-
-# ---------- High-contrast medical CSS ----------
+# ---------- Blue-Purple Modern Contrast CSS ----------
 custom_css = r"""
 body {
-    background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%) !important;
+    background: linear-gradient(135deg, #7f9cf5 0%, #a78bfa 100%) !important;
     font-family: 'Segoe UI', Tahoma, sans-serif;
-    color: #0f172a;
+    color: #282539;
 }
 #profile-sidebar {
-    background: #ffffff;
-    color: #0f172a;
+    background: #322c50;
+    color: #fff;
     min-width: 260px;
     max-width: 320px;
     padding: 24px;
-    border-radius: 14px;
-    box-shadow: 0 6px 20px rgba(2,6,23,0.08);
-    margin-right: 20px;
+    border-radius: 17px;
+    box-shadow: 0 8px 32px rgba(56,18,169,0.20);
+    margin-right: 26px;
 }
-#profile-sidebar h3 { color: #1e40af; margin-bottom: 6px; }
-#profile-sidebar .tagline { color: #475569; font-size: 13px; }
+#profile-sidebar h3 { color: #8bbafe; margin-bottom: 6px; }
+#profile-sidebar .tagline { color: #e0e7ff; font-size: 13px; }
 .placeholder-avatar {
     width: 82px; height: 82px;
     border-radius: 50%;
-    background: #93c5fd;
+    background: #818cf8;
     display: flex; align-items: center; justify-content: center;
-    color: #1e3a8a; font-weight: 700; font-size: 28px;
-    margin-bottom: 14px;
+    color: #3730a3; font-weight: 700; font-size: 28px;
+    margin-bottom: 16px;
+    box-shadow: 0 0 0 4px #a78bfa50;
 }
 #chat-display { 
-    background: #ffffff; 
-    border-radius: 12px; 
-    padding: 12px; 
-    box-shadow: 0 6px 18px rgba(2,6,23,0.06);
+    background: #fffbe9; 
+    border-radius: 14px; 
+    padding: 14px; 
+    box-shadow: 0 6px 24px rgba(56,18,169,0.06);
     height: 540px;
     overflow: hidden;
 }
@@ -202,31 +188,31 @@ body {
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 14px;
     padding-right: 8px;
 }
 .bubble {
     max-width: 85%;
-    padding: 12px 16px;
-    border-radius: 14px;
-    line-height: 1.4;
+    padding: 13px 19px;
+    border-radius: 18px;
+    line-height: 1.45;
     word-wrap: break-word;
-    box-shadow: 0 2px 8px rgba(2,6,23,0.04);
+    box-shadow: 0 3px 11px rgba(130, 90, 176, 0.08);
 }
 .bubble.user {
     align-self: flex-end;
-    background: #bfdbfe !important;
-    color: #0b3b8c !important;
+    background: #6851d8 !important;
+    color: #e0e7ff !important;
 }
 .bubble.assistant {
     align-self: flex-start;
-    background: #d1fae5 !important;
-    color: #064e3b !important;
+    background: #c7d2fe !important;
+    color: #3730a3 !important;
 }
 .bubble.system {
     align-self: center;
-    background: #f1f5f9;
-    color: #334155;
+    background: #ede9fe;
+    color: #5b21b6;
 }
 .bubble .text {
     white-space: pre-wrap !important;
@@ -237,19 +223,22 @@ body {
 }
 #message-input textarea {
     border-radius: 12px !important;
-    border: 2px solid #93c5fd !important;
+    border: 2.5px solid #7b33cc !important;
     resize: none !important;
     height: 48px !important;
     overflow-y: auto !important;
+    background: #f5f3ff !important;
+    color: #37146b !important;
 }
 #send-btn {
-    background: #1e40af !important;
-    color: #ffffff !important;
-    border-radius: 10px !important;
+    background: linear-gradient(90deg,#6851d8 60%,#33b1e6 100%) !important;
+    color: #fff !important;
+    border-radius: 12px !important;
     font-weight: 600;
+    letter-spacing: 0.04em;
+    border: none;
 }
 """
-
 # ---------- Gradio UI ----------
 with gr.Blocks(theme=gr.themes.Soft(), css=custom_css) as demo:
     with gr.Row():
@@ -269,11 +258,9 @@ with gr.Blocks(theme=gr.themes.Soft(), css=custom_css) as demo:
             )
             send_btn = gr.Button("Send", elem_id="send-btn")
             state = gr.State([])
-
             def handle_message(user_text, history):
                 if not user_text or str(user_text).strip() == "":
                     return "", history or [], render_history_as_html(history or [])
-
                 # ---- FLATTEN history to avoid nested list from gr.State ----
                 flat_history = []
                 for h in (history or []):
@@ -281,17 +268,13 @@ with gr.Blocks(theme=gr.themes.Soft(), css=custom_css) as demo:
                         flat_history.extend(h)
                     else:
                         flat_history.append(h)
-
                 assistant_text = me.chat(user_text, flat_history)
                 flat_history.append({"role": "user", "content": user_text})
                 flat_history.append({"role": "assistant", "content": assistant_text})
                 html_out = render_history_as_html(flat_history)
                 return "", flat_history, html_out
-
             msg.submit(handle_message, [msg, state], [msg, state, chat_display])
             send_btn.click(handle_message, [msg, state], [msg, state, chat_display])
-
 app = mount_gradio_app(app, demo, path="/")
-
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=port)
