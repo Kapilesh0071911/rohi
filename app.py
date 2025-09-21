@@ -196,7 +196,7 @@ body {
     margin-bottom: 20px;
 }
 #chat-display { 
-    background: s#2d1a4f;  /* Purple shade */
+    background: #321861;  /* Purple shade */
     border-radius: 14px; 
     padding: 14px; 
     box-shadow: 0 6px 24px rgba(56,18,169,0.06);
@@ -259,7 +259,7 @@ body {
     border: none;
 }
 #updates-display {
-    background: #f0f4ff;
+    background: #453269;
     border-radius: 14px;
     padding: 16px;
     height: 540px;
