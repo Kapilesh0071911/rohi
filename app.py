@@ -196,7 +196,7 @@ body {
     margin-bottom: 20px;
 }
 #chat-display { 
-    background: #321861;  /* Purple shade */
+    background: #322c50;  /* Purple shade */
     border-radius: 14px; 
     padding: 14px; 
     box-shadow: 0 6px 24px rgba(56,18,169,0.06);
@@ -226,7 +226,7 @@ body {
 }
 .bubble.assistant {
     align-self: flex-start;
-    background: #b9a6f8 !important;  /* Lighter purple */
+    background: #584694 !important;  /* Lighter purple */
     color: #3e2a9c !important;
 }
 .bubble.system {
@@ -259,7 +259,7 @@ body {
     border: none;
 }
 #updates-display {
-    background: #453269;
+    background: #322c50;
     border-radius: 14px;
     padding: 16px;
     height: 540px;
@@ -267,7 +267,7 @@ body {
     box-shadow: 0 6px 24px rgba(56,18,169,0.1);
     font-size: 15px;
     line-height: 1.4;
-    color: #1e293b;
+    color: #9babc4;
 }
 #updates-display a {
     color: #3b82f6;
@@ -277,7 +277,7 @@ body {
     text-decoration: underline;
 }
 .small-timestamp {
-    color: #6a4bcf;
+    color: #edebf2;
     font-size: 12px;
     font-style: italic;
 }
