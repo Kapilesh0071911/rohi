@@ -1,4 +1,3 @@
-# app.py
 """
 CuraGuide - FastAPI + Gradio chatbot with:
 - India-focused vaccination database (UIP basics + age groups)
@@ -296,6 +295,8 @@ body {
     writing-mode: horizontal-tb !important;
     display: inline-block;
 }
+
+/* Light mode base colors - text is dark, backgrounds light */
 #message-input textarea {
     border-radius: 12px !important;
     border: 2.5px solid #a9abc1 !important;
@@ -305,6 +306,7 @@ body {
     background: #fff !important;
     color: #2e2e38 !important;
 }
+
 #send-btn {
     background: #7a86b6 !important;
     color: #fff !important;
@@ -313,6 +315,7 @@ body {
     letter-spacing: 0.04em;
     border: none;
 }
+
 #updates-display, #schedule-display {
     border-radius: 14px;
     padding: 16px;
@@ -324,17 +327,67 @@ body {
     color: #2e2e38;
     box-shadow: 0 4px 20px rgba(58, 58, 70, 0.05);
 }
+
 #updates-display a, #schedule-display a {
     color: #7a86b6;
     text-decoration: none;
 }
+
 #updates-display a:hover, #schedule-display a:hover {
     text-decoration: underline;
 }
+
 .small-timestamp {
     color: #9d9db2;
     font-size: 12px;
     font-style: italic;
+}
+
+/* Dark mode overrides */
+@media (prefers-color-scheme: dark) {
+    body {
+        background: #121212;
+        color: #e0e0e0;
+    }
+    #profile-sidebar {
+        background: #262626;
+        color: #e0e0e0;
+    }
+    #chat-display {
+        background: #1e1e1e;
+        color: #e0e0e0;
+    }
+    .bubble.user {
+        background: #5e55a3;
+        color: #fefefe;
+    }
+    .bubble.assistant {
+        background: #34354f;
+        color: #e0e0e0;
+    }
+    .bubble.system {
+        background: #2f2f3f;
+        color: #bbbbbb;
+    }
+    #updates-display, #schedule-display {
+        background: #2b2b3b;
+        color: #dedede;
+    }
+    #updates-display a, #schedule-display a {
+        color: #a3a0f9;
+    }
+    #updates-display a:hover, #schedule-display a:hover {
+        text-decoration: underline;
+    }
+    #message-input textarea {
+        background: #252525 !important;
+        color: #e0e0e0 !important;
+        border-color: #6a6a8a !important;
+    }
+    #send-btn {
+        background: linear-gradient(90deg, #494377 60%, #5f59b8 100%) !important;
+        color: #e0e0e0 !important;
+    }
 }
 """
 
