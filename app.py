@@ -126,6 +126,8 @@ class Me:
         self.database = _read_file("me/database.txt")
         self.DiseasePrecaution = _read_file("me/DiseasePrecaution.txt")
         self.diseases = _read_file("me/diseases.txt")
+        self.demographic = _read_file("me/demographic.txt")
+
 
     def system_prompt(self):
         return (
@@ -266,7 +268,6 @@ VACCINE_DB = {
         ],
         "notes": "Protects beyond infancy; additional Tdap in adolescence as per local norms."
     },
-    # Additional recommended vaccines (region / program dependent)
     "influenza": {
         "disease": "Seasonal Influenza",
         "standard": [{"age": "Annually", "dose": "Once yearly for high-risk groups and as recommended"}],
@@ -435,21 +436,51 @@ body {
     margin-right: 16px;
 }
 #chat-display {
-    background: #f8fffd;
-    border-radius: 12px;
-    padding: 12px;
-    height: 420px;
+    background: #5b369f;
+    border-radius: 14px;
+    padding: 14px;
+    height: 540px;
     overflow: hidden;
+    box-shadow: 0 6px 24px rgba(56,18,169,0.06);
 }
-.chat-window { height: 100%; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding-right: 8px; }
-.bubble { max-width: 85%; padding: 12px 16px; border-radius: 14px; line-height: 1.45; box-shadow: 0 3px 11px rgba(2,51,50,0.06); }
-.bubble.user { align-self: flex-end; background: #10b981 !important; color: #fff !important; }
-.bubble.assistant { align-self: flex-start; background: #a7f3d0 !important; color: #064e3b !important; }
-.bubble.system { align-self: center; background: #e6fffa; color: #065f46; }
-#updates-display, #schedule-display { background: #fff; border-radius: 10px; padding: 12px; height: 200px; overflow-y: auto; box-shadow: 0 6px 24px rgba(2,51,50,0.08); color: #044e4b; font-size: 14px; line-height: 1.4; }
-#message-input textarea { border-radius: 10px !important; border: 2.5px solid #06b6d4 !important; background: #fff !important; color: #064e3b !important; height: 48px !important; }
-#send-btn { background: linear-gradient(90deg,#10b981 40%,#06b6d4 100%) !important; color: #fff !important; border-radius: 10px !important; font-weight: 600; border: none; }
-.small-timestamp { color: #065f46; font-size: 12px; font-style: italic; }
+.chat-window { height: 100%; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; padding-right: 8px; }
+.bubble { max-width: 85%; padding: 13px 19px; border-radius: 18px; line-height: 1.45; word-wrap: break-word; box-shadow: 0 3px 11px rgba(130, 90, 176, 0.08); }
+.bubble.user { align-self: flex-end; background: #6b52d8 !important; color: #e0dfff !important;}
+.bubble.assistant { align-self: flex-start; background: #b9a6f8 !important; color: #3e2a9c !important; }
+.bubble.system { align-self: center; background: #d9d2fc; color: #543f99; }
+.bubble .text { white-space: pre-wrap !important; word-break: break-word !important; overflow-wrap: break-word !important; writing-mode: horizontal-tb !important; display: inline-block; }
+#message-input textarea { border-radius: 12px !important; border: 2.5px solid #6249d1 !important; resize: none !important; height: 48px !important; overflow-y: auto !important; background: #ebe9ff !important; color: #4b3cb1 !important; }
+#send-btn { background: linear-gradient(90deg,#6b52d8 60%,#a894fb 100%) !important; color: #fff !important; border-radius: 12px !important; font-weight: 600; letter-spacing: 0.04em; border: none; }
+#updates-display, #schedule-display {
+    border-radius: 14px;
+    padding: 16px;
+    height: 200px;
+    overflow-y: auto;
+    font-size: 15px;
+    line-height: 1.4;
+}
+#updates-display {
+    background: #381b5b;
+    color: #e7e0fa;
+    box-shadow: 0 6px 24px rgba(56,18,169,0.15);
+}
+#schedule-display {
+    background: #2a1850;
+    color: #e7e0fa;
+    box-shadow: 0 6px 24px rgba(90, 64, 150, 0.24);
+}
+#updates-display a, #schedule-display a {
+    color: #a78bfa;
+    text-decoration: none;
+}
+#updates-display a:hover, #schedule-display a:hover {
+    text-decoration: underline;
+}
+.small-timestamp {
+    color: #b5a7f9;
+    font-size: 12px;
+    font-style: italic;
+}
 """
 
 # ---------- Gradio UI ----------
