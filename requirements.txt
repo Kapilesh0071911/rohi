@@ -1,9 +1,9 @@
-requests
-python-dotenv
-gradio
-pypdf
-openai
-openai-agents
-fastapi
-uvicorn
 
+python-dotenv==1.0.0
+openai==0.27.0
+gradio==3.44.0
+fastapi==0.95.1
+uvicorn[standard]==0.22.0
+pypdf==3.11.0
+requests==2.31.0
+twilio==8.13.0

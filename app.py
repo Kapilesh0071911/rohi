@@ -4,17 +4,21 @@ CuraGuide - FastAPI + Gradio chatbot with:
 - India-focused vaccination database (UIP basics + age groups)
 - Live outbreak fetch (Serper) — optional (requires SERPER_API_KEY in .env)
 - Outbreak detection -> outbreak-driven vaccination drive recommendations
-- Twilio webhook example (optional) for WhatsApp integration
+- Twilio webhook example (optional) for SMS integration
 
 Required .env variables:
 - OPENAI_API_KEY (for OpenAI SDK)
 - SERPER_API_KEY (optional; for live outbreak fetch)
 - PUSHOVER_TOKEN / PUSHOVER_USER (optional; for push notifications)
+- TWILIO_ACCOUNT_SID (for Twilio)
+- TWILIO_AUTH_TOKEN (for Twilio)
+- TWILIO_PHONE_NUMBER (for Twilio)
 - PORT (optional; defaults to 4000)
 
-Install:
-pip install python-dotenv openai gradio fastapi uvicorn pypdf requests
+Install dependencies:
+pip install python-dotenv openai gradio fastapi uvicorn pypdf requests twilio
 """
+
 from dotenv import load_dotenv
 from openai import OpenAI
 import json, os, requests, html as html_module, re
@@ -24,22 +28,31 @@ from fastapi import FastAPI, Request, Response
 import uvicorn
 from gradio.routes import mount_gradio_app
 from datetime import datetime, timedelta
+from twilio.rest import Client
 
-# Load environment
+# Load environment variables
 load_dotenv(override=True)
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 SERPER_API_KEY = os.getenv("SERPER_API_KEY")
 PUSHOVER_TOKEN = os.getenv("PUSHOVER_TOKEN")
 PUSHOVER_USER = os.getenv("PUSHOVER_USER")
 PORT = int(os.getenv("PORT", 4000))
+TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
+TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
+TWILIO_PHONE_NUMBER = os.getenv("TWILIO_PHONE_NUMBER")
 
-# Initialize OpenAI client
+# Setup OpenAI client
 os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY or ""
 openai_client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 
+# Setup Twilio client
+twilio_client = None
+if TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN:
+    twilio_client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+
 app = FastAPI()
 
-# ---------- Small notification helpers ----------
+# ---------- Notification helpers ----------
 def push(text):
     try:
         if not PUSHOVER_TOKEN or not PUSHOVER_USER:
@@ -55,6 +68,17 @@ def push(text):
         )
     except Exception:
         pass
+
+# ---------- Twilio SMS sending function ----------
+def send_sms(to_number, message):
+    if not twilio_client:
+        print("Twilio client not configured.")
+        return
+    twilio_client.messages.create(
+        body=message,
+        from_=TWILIO_PHONE_NUMBER,
+        to=to_number
+    )
 
 # ---------- Tools ----------
 def record_user_details(email, name="Name not provided", notes="not provided"):
@@ -182,7 +206,7 @@ def render_history_as_html(history):
 """)
     return "\n".join(safe_parts)
 
-# ---------- Serper fetch for live outbreak info ----------
+# ---------- Serper live outbreak info ----------
 def fetch_serper_updates(search_query=None):
     if not search_query:
         search_query = "latest disease outbreaks India 2025 health updates"
@@ -373,15 +397,25 @@ with gr.Blocks(theme=gr.themes.Soft(), css=custom_css) as demo:
 # mount gradio
 app = mount_gradio_app(app, demo, path="/")
 
-# ---------- Optional Twilio webhook endpoint (simple) ----------
-@app.post("/twilio-whatsapp")
-async def twilio_whatsapp(request: Request):
+# ---------- Twilio SMS webhook for receiving messages ----------
+@app.post("/twilio-sms")
+async def twilio_sms_webhook(request: Request):
     form = await request.form()
-    user_text = form.get("Body", "")
-    reply = me.chat(user_text, [])
-    twiml = f"<?xml version='1.0' encoding='UTF-8'?><Response><Message>{html_module.escape(reply)}</Message></Response>"
-    return Response(content=twiml, media_type="application/xml")
+    from_number = form.get("From")
+    to_number = form.get("To")
+    body = form.get("Body")
 
-# ---------- Run server ----------
+    print(f"Received SMS from {from_number}: {body}")
+
+    # Pass received message to chatbot
+    reply = me.chat(body, [])
+
+    # Response TwiML to reply via SMS
+    twiml_response = f"""<?xml version="1.0" encoding="UTF-8"?>
+<Response><Message>{html_module.escape(reply)}</Message></Response>"""
+
+    return Response(content=twiml_response, media_type="application/xml")
+
+# ---------- Run ----------
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=PORT)
