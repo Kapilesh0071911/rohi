@@ -1,6 +1,6 @@
 # app.py
 """
-CuraGuide - FastAPI + Gradio chatbot with:
+ROHI - FastAPI + Gradio chatbot with:
 - India-focused vaccination database (UIP basics + age groups)
 - Live outbreak fetch (Serper) — optional (requires SERPER_API_KEY in .env)
 - Outbreak detection -> outbreak-driven vaccination drive recommendations
@@ -126,7 +126,7 @@ tools = [
 class Me:
     def __init__(self):
         self.openai = openai_client
-        self.name = "CuraGuide"
+        self.name = "ROHI"
         self.linkedin = ""
         self.diseases1 = ""
         try:
@@ -153,6 +153,10 @@ class Me:
     def system_prompt(self):
         return (
             f"You are {self.name}, an AI-powered public health assistant. "
+            "understand the people you are talking to by reading demographic.txt"
+            "ALWAYS RESPOND IN SIMPLE LANGUAGE."
+            "ALWAYS SOUND HUMBLE AND POLITE WHILE RESPONDING."
+            "provide alternate medicines if it is safe and has no side effects."
             "Provide disease awareness and health guidance. "
             "If you don't know an answer, use record_unknown_question tool. "
             "If the user provides an email, record it using record_user_details.\n\n"
@@ -370,7 +374,7 @@ with gr.Blocks(theme=gr.themes.Soft(), css=custom_css) as demo:
             if os.path.exists("image.jpg"):
                 gr.Image("image.jpg", elem_id="logo", show_label=False, width=120)
             else:
-                gr.Markdown("### CuraGuide\nAI-Powered Public Health Assistant")
+                gr.Markdown("### ROHI\nAI-Powered Public Health Assistant")
             gr.Markdown("<div class='tagline'>Reliable disease awareness and guidance</div>")
             gr.Markdown("---")
             btn_updates = gr.Button("Refresh Latest Updates")
