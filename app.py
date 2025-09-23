@@ -1,3 +1,4 @@
+# app.py
 """
 CuraGuide - FastAPI + Gradio chatbot with:
 - India-focused vaccination database (UIP basics + age groups)
@@ -179,7 +180,7 @@ class Me:
 
 me = Me()
 
-# ---------- Helpers ----------
+# ---------- Helper function ----------
 def render_history_as_html(history):
     safe_parts = []
     safe_parts.append("<div class='chat-window' id='chat-window'>")
@@ -205,7 +206,7 @@ def render_history_as_html(history):
 """)
     return "\n".join(safe_parts)
 
-# ---------- Serper live outbreak info ----------
+# ---------- Serper fetch ----------
 def fetch_serper_updates(search_query=None):
     if not search_query:
         search_query = "latest disease outbreaks India 2025 health updates"
@@ -232,30 +233,55 @@ def fetch_serper_updates(search_query=None):
         return "<b>No updates found.</b>"
     return "".join(snippets)
 
-# ---------- Styling ----------
+# ---------- Vaccination schedule generation ----------
+def create_vaccination_schedule_from_updates(html_text):
+    standard_schedule = (
+        "<b>Standard Vaccination schedule (India):</b><br>"
+        "- BCG at birth<br>"
+        "- Hepatitis B: within 24h of birth, 6 weeks, 14 weeks<br>"
+        "- Pentavalent: 6, 10, 14 weeks<br>"
+        "- IPV: 6 & 14 weeks<br><br>"
+    )
+    outbreak_info = "<b>Outbreak-driven Vaccination Recommendations:</b><br><br>"
+    vaccines = []
+    lower_text = html_text.lower()
+    if "measles" in lower_text or "rubella" in lower_text:
+        vaccines.append("MR vaccine for children 9-24 months")
+    if "polio" in lower_text:
+        vaccines.append("OPV for children under 5 years")
+    if "hepatitis b" in lower_text:
+        vaccines.append("Hepatitis B vaccine for newborns and at-risk groups")
+    if vaccines:
+        for v in vaccines:
+            outbreak_info += f"- {v}<br>"
+    else:
+        outbreak_info += "No specific outbreak-related updates detected.<br>"
+    return f"<div style='max-height:420px;overflow:auto;'>{standard_schedule}<hr>{outbreak_info}</div>"
+
+# ---------- CSS styling ----------
 custom_css = r"""
 body {
-    background: #f5f5f7;
+    background: #f5f0e6; /* beige background */
     font-family: 'Segoe UI', Tahoma, sans-serif;
-    color: #2e2e38;
+    color: #00796b; /* teal text color */
 }
 #profile-sidebar {
-    background: #e3e6f3;
-    color: #2e2e38;
+    background: #e0d7ca; /* slightly darker beige */
+    color: #00796b; /* teal */
     min-width: 260px;
     max-width: 320px;
     padding: 24px;
     border-radius: 12px;
-    box-shadow: 0 4px 16px rgba(58, 58, 70, 0.1);
+    box-shadow: none;
     margin-right: 16px;
+    border: 1.5px solid black; /* black outline */
 }
 #chat-display {
-    background: #ffffff;
+    background: #f5f0e6; /* beige */
     border-radius: 14px;
     padding: 14px;
     height: 540px;
     overflow: hidden;
-    box-shadow: 0 4px 20px rgba(58, 58, 70, 0.08);
 }
 .chat-window {
     height: 100%;
@@ -271,22 +297,22 @@ body {
     border-radius: 18px;
     line-height: 1.45;
     word-wrap: break-word;
-    box-shadow: 0 2px 8px rgba(58, 58, 70, 0.04);
+    border: 1.5px solid black; /* black outline */
 }
 .bubble.user {
     align-self: flex-end;
-    background: #7a86b6;
-    color: #f2f2f7;
+    background: #fff3e0;
+    color: #00796b; /* teal */
 }
 .bubble.assistant {
     align-self: flex-start;
-    background: #d6d9eb;
-    color: #2e2e38;
+    background: #b2dfdb;
+    color: #004d40; /* dark teal */
 }
 .bubble.system {
     align-self: center;
-    background: #f0f1f5;
-    color: #6b6b7a;
+    background: #d7ccc8;
+    color: #004d40;
 }
 .bubble .text {
     white-space: pre-wrap !important;
@@ -295,27 +321,23 @@ body {
     writing-mode: horizontal-tb !important;
     display: inline-block;
 }
-
-/* Light mode base colors - text is dark, backgrounds light */
 #message-input textarea {
     border-radius: 12px !important;
-    border: 2.5px solid #a9abc1 !important;
+    border: 1.5px solid black !important; /* black outline */
     resize: none !important;
     height: 48px !important;
     overflow-y: auto !important;
-    background: #fff !important;
-    color: #2e2e38 !important;
+    background: #fff3e0 !important; /* beige */
+    color: #00796b !important; /* teal */
 }
-
 #send-btn {
-    background: #7a86b6 !important;
+    background: #f57c00 !important; /* orange buttons */
     color: #fff !important;
     border-radius: 12px !important;
     font-weight: 600;
     letter-spacing: 0.04em;
-    border: none;
+    border: 1.5px solid black !important; /* black outline */
 }
-
 #updates-display, #schedule-display {
     border-radius: 14px;
     padding: 16px;
@@ -323,71 +345,21 @@ body {
     overflow-y: auto;
     font-size: 15px;
     line-height: 1.4;
-    background: #f1f2f6;
-    color: #2e2e38;
-    box-shadow: 0 4px 20px rgba(58, 58, 70, 0.05);
+    background: #f5f0e6; /* beige */
+    color: #00796b; /* teal */
+    border: 1.5px solid black; /* black outline */
 }
-
 #updates-display a, #schedule-display a {
-    color: #7a86b6;
+    color: #f57c00; /* orange links */
     text-decoration: none;
 }
-
 #updates-display a:hover, #schedule-display a:hover {
     text-decoration: underline;
 }
-
 .small-timestamp {
-    color: #9d9db2;
+    color: #004d40; /* dark teal */
     font-size: 12px;
     font-style: italic;
-}
-
-/* Dark mode overrides */
-@media (prefers-color-scheme: dark) {
-    body {
-        background: #121212;
-        color: #e0e0e0;
-    }
-    #profile-sidebar {
-        background: #262626;
-        color: #e0e0e0;
-    }
-    #chat-display {
-        background: #1e1e1e;
-        color: #e0e0e0;
-    }
-    .bubble.user {
-        background: #5e55a3;
-        color: #fefefe;
-    }
-    .bubble.assistant {
-        background: #34354f;
-        color: #e0e0e0;
-    }
-    .bubble.system {
-        background: #2f2f3f;
-        color: #bbbbbb;
-    }
-    #updates-display, #schedule-display {
-        background: #2b2b3b;
-        color: #dedede;
-    }
-    #updates-display a, #schedule-display a {
-        color: #a3a0f9;
-    }
-    #updates-display a:hover, #schedule-display a:hover {
-        text-decoration: underline;
-    }
-    #message-input textarea {
-        background: #252525 !important;
-        color: #e0e0e0 !important;
-        border-color: #6a6a8a !important;
-    }
-    #send-btn {
-        background: linear-gradient(90deg, #494377 60%, #5f59b8 100%) !important;
-        color: #e0e0e0 !important;
-    }
 }
 """
 
@@ -403,7 +375,7 @@ with gr.Blocks(theme=gr.themes.Soft(), css=custom_css) as demo:
             gr.Markdown("---")
             btn_updates = gr.Button("Refresh Latest Updates")
             btn_schedule = gr.Button("Create Vaccination Schedule")
-            gr.Markdown("<div style='font-size:13px;color:#7a86b6'>Status: live</div>")
+            gr.Markdown("<div style='font-size:13px;color:#f57c00'>Status: live</div>")
 
         with gr.Column(scale=0.55):
             chat_display = gr.HTML(render_history_as_html([]), elem_id="chat-display")
