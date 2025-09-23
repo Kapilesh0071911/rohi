@@ -33,13 +33,13 @@ PUSHOVER_TOKEN = os.getenv("PUSHOVER_TOKEN")
 PUSHOVER_USER = os.getenv("PUSHOVER_USER")
 PORT = int(os.getenv("PORT", 4000))
 
-# Initialize OpenAI client (new SDK style)
+# Initialize OpenAI client
 os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY or ""
 openai_client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 
 app = FastAPI()
 
-# ---------- Small notification helpers (optional) ----------
+# ---------- Small notification helpers ----------
 def push(text):
     try:
         if not PUSHOVER_TOKEN or not PUSHOVER_USER:
@@ -56,7 +56,7 @@ def push(text):
     except Exception:
         pass
 
-# ---------- Tools used by the assistant ----------
+# ---------- Tools ----------
 def record_user_details(email, name="Name not provided", notes="not provided"):
     push(f"Recording {name} with email {email} and notes {notes}")
     return {"recorded": "ok"}
@@ -98,12 +98,11 @@ tools = [
     {"type": "function", "function": record_unknown_question_json}
 ]
 
-# ---------- Minimal Me class (keeps assistant behaviour) ----------
+# ---------- Me class ----------
 class Me:
     def __init__(self):
         self.openai = openai_client
         self.name = "CuraGuide"
-        # optionally load local docs
         self.linkedin = ""
         self.diseases1 = ""
         try:
@@ -137,7 +136,6 @@ class Me:
         )
 
     def chat(self, message, history):
-        # Flatten history and call OpenAI (if configured)
         flat_history = []
         for h in (history or []):
             if isinstance(h, list):
@@ -148,9 +146,7 @@ class Me:
             {"role":"user", "content": message}
         ]
         if not self.openai:
-            # fallback simple echo
             return "OpenAI API key not configured. This is a fallback reply."
-        # Use chat completions with tools (if available)
         response = self.openai.chat.completions.create(
             model="gpt-4o-mini",
             messages=messages,
@@ -160,7 +156,7 @@ class Me:
 
 me = Me()
 
-# ---------- UI helper ----------
+# ---------- Helpers ----------
 def render_history_as_html(history):
     safe_parts = []
     safe_parts.append("<div class='chat-window' id='chat-window'>")
@@ -185,6 +181,33 @@ def render_history_as_html(history):
 </script>
 """)
     return "\n".join(safe_parts)
+
+# ---------- Serper fetch for live outbreak info ----------
+def fetch_serper_updates(search_query=None):
+    if not search_query:
+        search_query = "latest disease outbreaks India 2025 health updates"
+    if not SERPER_API_KEY:
+        return "<b>Serper API key not found (SERPER_API_KEY in .env). Cannot fetch live updates.</b>"
+    headers = {"X-API-KEY": SERPER_API_KEY, "Content-Type": "application/json"}
+    json_data = {"q": search_query, "gl": "in", "hl": "en"}
+    try:
+        resp = requests.post("https://google.serper.dev/search", headers=headers, json=json_data, timeout=12)
+    except Exception as e:
+        return f"<b>Could not fetch live updates: {html_module.escape(str(e))}</b>"
+    if resp.status_code != 200:
+        return f"<b>Could not fetch live updates (status {resp.status_code}).</b>"
+    data = resp.json()
+    snippets = []
+    for item in data.get("organic", [])[:8]:
+        title = item.get("title", "")
+        snippet = item.get("snippet", "")
+        link = item.get("link", "")
+        date = item.get("date") or item.get("published") or ""
+        date_html = f"<br><span class='small-timestamp'>Updated: {date}</span>" if date else ""
+        snippets.append(f"<b>{html_module.escape(title)}</b><br>{html_module.escape(snippet)}{date_html}<br><a href='{link}' target='_blank'>{link}</a><br><br>")
+    if not snippets:
+        return "<b>No updates found.</b>"
+    return "".join(snippets)
 
 # ---------- Styling ----------
 custom_css = r"""
@@ -290,10 +313,6 @@ body {
     font-style: italic;
 }
 """
-
-# (You can keep the rest of the unchanged code from above as-is for the UI, chat, and API integrations)
-
-# ---------- Serper fetch and other logic remains same ----------
 
 # ---------- Gradio UI ----------
 with gr.Blocks(theme=gr.themes.Soft(), css=custom_css) as demo:
