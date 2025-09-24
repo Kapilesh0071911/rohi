@@ -156,6 +156,7 @@ class Me:
             "understand the people you are talking to by reading demographic.txt"
             "ALWAYS RESPOND IN SIMPLE LANGUAGE."
             "ALWAYS SOUND HUMBLE AND POLITE WHILE RESPONDING."
+            "ALWAYS PROVIDE A DESCLIAMER THAT PLEASE CONSULT A DOCTOR.THIS CHATBOT IS ONLY FOR INFORMATION AND DO NOT FOLLOW IT BLINDLY."
             "provide alternate medicines if it is safe and has no side effects."
             "Provide disease awareness and health guidance. "
             "If you don't know an answer, use record_unknown_question tool. "
@@ -269,6 +270,19 @@ body {
     font-family: 'Segoe UI', Tahoma, sans-serif;
     color: #00796b; /* teal text color */
 }
+#disclaimer-box {
+    background: #e53935;
+    color: #fff;
+    padding: 14px 18px;
+    font-size: 15px;
+    font-weight: bold;
+    border-radius: 9px;
+    margin-bottom: 18px;
+    text-align: center;
+    border: 2.5px solid #b71c1c;
+    box-shadow: 0 2px 8px rgba(230,57,53,0.18);
+    letter-spacing: 0.02em;
+}
 #profile-sidebar {
     background: #e0d7ca; /* slightly darker beige */
     color: #00796b; /* teal */
@@ -370,6 +384,10 @@ body {
 # ---------- Gradio UI ----------
 with gr.Blocks(theme=gr.themes.Soft(), css=custom_css) as demo:
     with gr.Row():
+        gr.Markdown(
+            "<div id='disclaimer-box'>⚠️ THIS CHATBOT IS ONLY FOR INFORMATION AND AWARENESS. ALWAYS CONSULT A DOCTOR.</div>",
+            elem_id="disclaimer-box"
+        )
         with gr.Column(elem_id="profile-sidebar", scale=0.22):
             if os.path.exists("image.jpg"):
                 gr.Image("image.jpg", elem_id="logo", show_label=False, width=120)
