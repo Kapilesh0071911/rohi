@@ -52,7 +52,6 @@ if TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN:
 
 app = FastAPI()
 
-# ---------- Notification helpers ----------
 def push(text):
     try:
         if not PUSHOVER_TOKEN or not PUSHOVER_USER:
@@ -69,7 +68,6 @@ def push(text):
     except Exception:
         pass
 
-# ---------- Twilio SMS sending function ----------
 def send_sms(to_number, message):
     if not twilio_client:
         print("Twilio client not configured.")
@@ -80,7 +78,6 @@ def send_sms(to_number, message):
         to=to_number
     )
 
-# ---------- Tools ----------
 def record_user_details(email, name="Name not provided", notes="not provided"):
     push(f"Recording {name} with email {email} and notes {notes}")
     return {"recorded": "ok"}
@@ -122,7 +119,6 @@ tools = [
     {"type": "function", "function": record_unknown_question_json}
 ]
 
-# ---------- Me class ----------
 class Me:
     def __init__(self):
         self.openai = openai_client
@@ -185,7 +181,6 @@ class Me:
 
 me = Me()
 
-# ---------- Helper function ----------
 def render_history_as_html(history):
     safe_parts = []
     safe_parts.append("<div class='chat-window' id='chat-window'>")
@@ -211,7 +206,6 @@ def render_history_as_html(history):
 """)
     return "\n".join(safe_parts)
 
-# ---------- Serper fetch ----------
 def fetch_serper_updates(search_query=None):
     if not search_query:
         search_query = "latest disease outbreaks India 2025 health updates"
@@ -238,7 +232,6 @@ def fetch_serper_updates(search_query=None):
         return "<b>No updates found.</b>"
     return "".join(snippets)
 
-# ---------- Vaccination schedule generation ----------
 def create_vaccination_schedule_from_updates(html_text):
     standard_schedule = (
         "<b>Standard Vaccination schedule (India):</b><br>"
@@ -263,25 +256,11 @@ def create_vaccination_schedule_from_updates(html_text):
         outbreak_info += "No specific outbreak-related updates detected.<br>"
     return f"<div style='max-height:420px;overflow:auto;'>{standard_schedule}<hr>{outbreak_info}</div>"
 
-# ---------- CSS styling ----------
 custom_css = r"""
 body {
     background: #f5f0e6; /* beige background */
     font-family: 'Segoe UI', Tahoma, sans-serif;
     color: #00796b; /* teal text color */
-}
-#disclaimer-box {
-    background: #e53935;
-    color: #fff;
-    padding: 14px 18px;
-    font-size: 15px;
-    font-weight: bold;
-    border-radius: 9px;
-    margin-bottom: 18px;
-    text-align: center;
-    border: 2.5px solid #b71c1c;
-    box-shadow: 0 2px 8px rgba(230,57,53,0.18);
-    letter-spacing: 0.02em;
 }
 #profile-sidebar {
     background: #e0d7ca; /* slightly darker beige */
@@ -293,6 +272,19 @@ body {
     box-shadow: none;
     margin-right: 16px;
     border: 1.5px solid black; /* black outline */
+}
+#disclaimer-box {
+    background: #e53935;
+    color: #fff;
+    padding: 12px 12px;
+    font-size: 14px;
+    font-weight: bold;
+    border-radius: 9px;
+    margin: 18px 0 8px 0;
+    text-align: center;
+    border: 2px solid #b71c1c;
+    box-shadow: 0 2px 8px rgba(230,57,53,0.18);
+    letter-spacing: 0.01em;
 }
 #chat-display {
     background: #f5f0e6; /* beige */
@@ -381,13 +373,8 @@ body {
 }
 """
 
-# ---------- Gradio UI ----------
 with gr.Blocks(theme=gr.themes.Soft(), css=custom_css) as demo:
     with gr.Row():
-        gr.Markdown(
-            "<div id='disclaimer-box'>⚠️ THIS CHATBOT IS ONLY FOR INFORMATION AND AWARENESS. ALWAYS CONSULT A DOCTOR.</div>",
-            elem_id="disclaimer-box"
-        )
         with gr.Column(elem_id="profile-sidebar", scale=0.22):
             if os.path.exists("image.jpg"):
                 gr.Image("image.jpg", elem_id="logo", show_label=False, width=120)
@@ -398,6 +385,10 @@ with gr.Blocks(theme=gr.themes.Soft(), css=custom_css) as demo:
             btn_updates = gr.Button("Refresh Latest Updates")
             btn_schedule = gr.Button("Create Vaccination Schedule")
             gr.Markdown("<div style='font-size:13px;color:#f57c00'>Status: live</div>")
+            gr.Markdown(
+                "<div id='disclaimer-box'>⚠️ THIS CHATBOT IS ONLY FOR INFORMATION AND AWARENESS. ALWAYS CONSULT A DOCTOR.</div>",
+                elem_id="disclaimer-box"
+            )
 
         with gr.Column(scale=0.55):
             chat_display = gr.HTML(render_history_as_html([]), elem_id="chat-display")
@@ -441,28 +432,19 @@ with gr.Blocks(theme=gr.themes.Soft(), css=custom_css) as demo:
             btn_updates.click(lambda: fetch_serper_updates(), outputs=updates_html)
             btn_schedule.click(generate_schedule, inputs=None, outputs=[updates_html, schedule_html])
 
-# mount gradio
 app = mount_gradio_app(app, demo, path="/")
 
-# ---------- Twilio SMS webhook for receiving messages ----------
 @app.post("/twilio-sms")
 async def twilio_sms_webhook(request: Request):
     form = await request.form()
     from_number = form.get("From")
     to_number = form.get("To")
     body = form.get("Body")
-
     print(f"Received SMS from {from_number}: {body}")
-
-    # Pass received message to chatbot
     reply = me.chat(body, [])
-
-    # Response TwiML to reply via SMS
     twiml_response = f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response><Message>{html_module.escape(reply)}</Message></Response>"""
-
     return Response(content=twiml_response, media_type="application/xml")
 
-# ---------- Run ----------
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=PORT)
